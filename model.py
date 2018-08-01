@@ -3,8 +3,9 @@ import json
 
 class Job(object):
 
+
     @staticmethod
-    def write_desc(job):
+    def writeDesc(job):
         desc = {
             'commands':[list(command.split(' ')) for command in job.commands],
             'name': job.name,
@@ -13,7 +14,7 @@ class Job(object):
         return json.dumps(desc)
     
     @staticmethod
-    def read_desc(desc):
+    def readDesc(desc):
 
         desc = json.loads(desc)
         job = Job(desc['name'], desc['metadata'])

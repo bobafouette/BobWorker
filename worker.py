@@ -1,6 +1,3 @@
-from threading import RLock
-
-
 class Worker(object):
 
 
@@ -8,12 +5,10 @@ class Worker(object):
 
         self.job= None
         self.proc = None
-        self.lock = RLock()
 
 
     def addJob(self, job):
         
-        self.lock.acquire()
         print('Testing state')
         if self.job or (self.proc and self.proc.poll() is None):
             return job
@@ -23,7 +18,6 @@ class Worker(object):
         
         self.job = job
         self.execute()
-        self.lock.release()
 
 
     def execute(self):

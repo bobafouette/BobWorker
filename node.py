@@ -1,5 +1,7 @@
 import socket
 import threading
+import errno
+import json
 
 from worker import Worker
 from model import Job
@@ -24,54 +26,145 @@ class Listener(threading.Thread):
             header = message[0]
 
             if header == 'JOB':
-                job = Job.read_desc(' '.join(message[1:]))
+                print('catch Job')
+                job = Job.readDesc(' '.join(message[1:]))
                 self.node.pushJob(job)
+            elif header == 'NODE':
+                node = Node.readDesc(' '.join(message[1:]))
+                self.node.replaceNeighbor(node, *address)
             
             client.send('ACK')
             client.close()
+
         self.socket.close()
         
 
 class Node(object):
 
-    def __init__(self, worker, port, ip):
 
-        self.worker = worker
-        self.neighbours = []
+    @staticmethod
+    def writeDesc(node):
+        desc = {
+            'port': node.port,
+            'ip': node.ip,
+        }
+        return json.dumps(desc)
+
+
+    @staticmethod
+    def readDesc(desc):
+
+        desc = json.loads(desc)
+        node = Node(desc['port'], desc['ip'])
+        return node
+
+
+    def __init__(self, port, ip):
+
+        print("INIT {ip}:{port}".format(ip= ip, port= port))
+        self.worker = Worker()
+        self.neighbors = []
         self.ip = ip
         self.port = port
         self.listener = Listener(port, self)
         self.listener.start()
+        self.passedJobCounter = 0
 
     
-    def addNeighbours(self, neighbours):
+    def addNeighbor(self, neighbor):
 
-        if not isinstance(neighbours, list):
-            neighbours = [neighbours]
-        self.neighbours.extend(neighbours)
+        if len(self.neighbors) >= 2:
+
+            node = Node.writeDesc(neighbor)
+            for index, currentNeighbor in enumerate(self.neighbors):
+
+                socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                socket_client.connect(((currentNeighbor.ip, currentNeighbor.port)))
+                socket_client.send('NODE {node}'.format(node=node))
+                response = socket_client.recv(255)
+                socket_client.close()
+                if response == 'ACK':
+                    self.neighbors.pop(index)
+                    break
+                print('HOST {ip}:{port} did not answered properly: {response}'.format(ip=currentNeighbor.ip, port=currentNeighbor.port, response=response))
+            else:
+                raise ValueError('ERROR on all neighbors.')
+
+        self.neighbors.append(neighbor)
+
+    
+    def replaceNeighbor(self, neighbor, originAddress, originPort):
+
+        for index, currentNeighbor in enumerate(self.neighbors):
+            if currentNeighbor.port != originPort or currentNeighbor.address != originAddress:
+                continue
+
+            self.neighbors.pop(index)
+            break
+        
+        else:
+            raise ValueError('No Node known with address {address} and port {port}'.format(
+                originAddress,
+                originPort
+            ))
+
+        self.addNeighbor(neighbor)
+        
     
 
     def pushJob(self, job):
+
         job = self.worker.addJob(job)
         if not job:
+            self.passedJobCounter = 0
             return
+        
+        if self.passedJobCounter > 5:
+            self.passedJobCounter = 0
+            self.startNode()
+
         self.passJob(job)
 
     def passJob(self, job):
-
-        job = Job.write_desc(job)
-        for neighbour in self.neighbours:
+        
+        print('passJob')
+        self.passedJobCounter += 1
+        job = Job.writeDesc(job)
+        for neighbor in self.neighbors:
 
             socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            socket_client.connect(((neighbour.ip, neighbour.port)))
+            socket_client.connect(((neighbor.ip, neighbor.port)))
             socket_client.send('JOB {job}'.format(job=job))
             response = socket_client.recv(255)
             socket_client.close()
             if response == 'ACK':
                 break
-            print('HOST {ip}:{port} did not answered properly: {response}'.format(ip=neighbour.ip, port=neighbour.port, response=response))
+            print('Node {ip}:{port} did not answered properly: {response}'.format(ip=neighbor.ip, port=neighbor.port, response=response))
         else:
-            raise ValueError('ERROR on all neighbours. ')
+            raise ValueError('ERROR on all neighbors.')
+
+
+    def startNode(self):
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        selectedPort = -1
+
+        currentPort = self.port
+        while selectedPort == -1 and currentPort < 65535:
+            try:
+                s.bind(("127.0.0.1", currentPort))
+            except socket.error as e:
+                if e.errno == errno.EADDRINUSE:
+                    continue
+                raise e
+
+        if selectedPort == -1:
+            raise ValueError('All ports seems occupied.')
+
+        newNode = Node(selectedPort, currentPort)
+        self.addNeighbor(newNode)
+
+        s.close()
 
 
 
