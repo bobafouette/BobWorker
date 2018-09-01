@@ -122,7 +122,6 @@ class Node(object):
         return node
 
     def __init__(self, port, ip):
-        print('NewNode %s %s' % (ip, port))
         self.worker = Worker()
         self.neighbor = None
         self.ip = ip
@@ -158,7 +157,6 @@ class Node(object):
 
         selectedPort = -1
         currentPort = self.port
-        print('Selecting a port')
 
         while selectedPort == -1 and currentPort < 65535:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -178,7 +176,6 @@ class Node(object):
             raise ValueError('All ports seems occupied.')
 
         newNode = Node(selectedPort, self.ip).castHasNeighbor()
-        print('Node initialized')
         self.addNeighbor(newNode)
 
     def exit(self):
