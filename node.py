@@ -2,20 +2,47 @@ import socket
 import threading
 import errno
 import json
+import logging
+import sys
+import time
 
 from worker import Worker
 from model import Job
 
-class Listener(threading.Thread):
 
+class SignalHandler:
+    """
+    The object that will handle signals and stop the worker threads.
+    """
+
+    #: The stop event that's shared by this handler and threads.
+    stopper = None
+
+    #: The pool of worker threads
+    workers = None
+
+    def __init__(self, stopper):
+        self.stopper = stopper
+
+    def __call__(self, signum, frame):
+        """
+        This will be called by the python signal module
+
+        https://docs.python.org/3/library/signal.html#signal.signal
+        """
+
+        self.stopper.set()
+        sys.exit(0)
+
+
+class Listener(threading.Thread):
 
     def __init__(self, port, node):
         super(Listener, self).__init__()
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind((socket.gethostbyname('localhost'), port))
         self.node = node
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.bind((self.node.ip, port))
 
-    
     def run(self):
         while True:
             self.socket.listen(5)
@@ -26,21 +53,58 @@ class Listener(threading.Thread):
             header = message[0]
 
             if header == 'JOB':
-                print('catch Job')
                 job = Job.readDesc(' '.join(message[1:]))
                 self.node.pushJob(job)
-            elif header == 'NODE':
-                node = Node.readDesc(' '.join(message[1:]))
-                self.node.replaceNeighbor(node, *address)
-            
-            client.send('ACK')
+
+            elif header == 'NEIGHBOR':
+                neighbor = Neighbor.readDesc(' '.join(message[1:]))
+                self.node.addNeighbor(neighbor)
             client.close()
 
+        self.node.exit()
         self.socket.close()
-        
+
+
+class Neighbor(object):
+
+    @staticmethod
+    def writeDesc(Neighbor):
+        desc = {
+            'port': Neighbor.port,
+            'ip': Neighbor.ip,
+        }
+        return json.dumps(desc)
+
+    @staticmethod
+    def readDesc(desc):
+
+        desc = json.loads(desc)
+        neighbor = Neighbor(desc['port'], desc['ip'])
+        return neighbor
+
+    def __init__(self, ip, port):
+
+        self.ip = ip
+        self.port = port
+
+    def passJob(self, job):
+
+        job = Job.writeDesc(job)
+        socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        socket_client.connect(((self.ip, self.port)))
+        socket_client.send('JOB {job}'.format(job=job))
+        socket_client.close()
+
+    def passNeighbor(self, neighbor):
+
+        neighbor = neighbor.writeDesc(neighbor)
+        socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        socket_client.connect(((self.ip, self.port)))
+        socket_client.send('NEIGHBOR {neighbor}'.format(neighbor=neighbor))
+        socket_client.close()
+
 
 class Node(object):
-
 
     @staticmethod
     def writeDesc(node):
@@ -50,7 +114,6 @@ class Node(object):
         }
         return json.dumps(desc)
 
-
     @staticmethod
     def readDesc(desc):
 
@@ -58,59 +121,24 @@ class Node(object):
         node = Node(desc['port'], desc['ip'])
         return node
 
-
     def __init__(self, port, ip):
-
-        print("INIT {ip}:{port}".format(ip= ip, port= port))
+        print('NewNode %s %s' % (ip, port))
         self.worker = Worker()
-        self.neighbors = []
+        self.neighbor = None
         self.ip = ip
         self.port = port
         self.listener = Listener(port, self)
         self.listener.start()
         self.passedJobCounter = 0
 
-    
+    def castHasNeighbor(self):
+        return Neighbor(self.ip, self.port)
+
     def addNeighbor(self, neighbor):
 
-        if len(self.neighbors) >= 2:
-
-            node = Node.writeDesc(neighbor)
-            for index, currentNeighbor in enumerate(self.neighbors):
-
-                socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                socket_client.connect(((currentNeighbor.ip, currentNeighbor.port)))
-                socket_client.send('NODE {node}'.format(node=node))
-                response = socket_client.recv(255)
-                socket_client.close()
-                if response == 'ACK':
-                    self.neighbors.pop(index)
-                    break
-                print('HOST {ip}:{port} did not answered properly: {response}'.format(ip=currentNeighbor.ip, port=currentNeighbor.port, response=response))
-            else:
-                raise ValueError('ERROR on all neighbors.')
-
-        self.neighbors.append(neighbor)
-
-    
-    def replaceNeighbor(self, neighbor, originAddress, originPort):
-
-        for index, currentNeighbor in enumerate(self.neighbors):
-            if currentNeighbor.port != originPort or currentNeighbor.address != originAddress:
-                continue
-
-            self.neighbors.pop(index)
-            break
-        
-        else:
-            raise ValueError('No Node known with address {address} and port {port}'.format(
-                originAddress,
-                originPort
-            ))
-
-        self.addNeighbor(neighbor)
-        
-    
+        if self.neighbor:
+            neighbor.passNeighbor(self.neighbor)
+        self.neighbor = neighbor
 
     def pushJob(self, job):
 
@@ -118,63 +146,54 @@ class Node(object):
         if not job:
             self.passedJobCounter = 0
             return
-        
+
         if self.passedJobCounter > 5:
             self.passedJobCounter = 0
             self.startNode()
 
-        self.passJob(job)
-
-    def passJob(self, job):
-        
-        print('passJob')
         self.passedJobCounter += 1
-        job = Job.writeDesc(job)
-        for neighbor in self.neighbors:
-
-            socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            socket_client.connect(((neighbor.ip, neighbor.port)))
-            socket_client.send('JOB {job}'.format(job=job))
-            response = socket_client.recv(255)
-            socket_client.close()
-            if response == 'ACK':
-                break
-            print('Node {ip}:{port} did not answered properly: {response}'.format(ip=neighbor.ip, port=neighbor.port, response=response))
-        else:
-            raise ValueError('ERROR on all neighbors.')
-
+        self.neighbor.passJob(job)
 
     def startNode(self):
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         selectedPort = -1
-
         currentPort = self.port
+        print('Selecting a port')
+
         while selectedPort == -1 and currentPort < 65535:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            currentPort += 1
+
             try:
-                s.bind(("127.0.0.1", currentPort))
+                s.bind((self.ip, currentPort))
             except socket.error as e:
                 if e.errno == errno.EADDRINUSE:
                     continue
                 raise e
 
+            s.close()
+            selectedPort = currentPort
+
         if selectedPort == -1:
             raise ValueError('All ports seems occupied.')
 
-        newNode = Node(selectedPort, currentPort)
+        newNode = Node(selectedPort, self.ip).castHasNeighbor()
+        print('Node initialized')
         self.addNeighbor(newNode)
 
-        s.close()
-
+    def exit(self):
+        self.worker.exit()
 
 
 if __name__ == '__main__':
 
     import argparse
-    argParser = argparse.ArgumentParser(description= 'A P2P commands distributor.')
-    argParser.add_argument('port', type= int,  help= 'A port to run the program on')
-    argParser.add_argument('name', help= 'Name this node')
-    
+    argParser = argparse.ArgumentParser(
+        description='A P2P commands distributor.')
+    argParser.add_argument(
+        'port', type=int,  help='A port to run the program on')
+    argParser.add_argument('name', help='Name this node')
+
     args = argParser.parse_args()
 
     # tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
