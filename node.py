@@ -79,7 +79,7 @@ class Neighbor(object):
     def readDesc(desc):
 
         desc = json.loads(desc)
-        neighbor = Neighbor(desc['port'], desc['ip'])
+        neighbor = Neighbor(desc['ip'], desc['port'])
         return neighbor
 
     def __init__(self, ip, port):
@@ -121,7 +121,7 @@ class Node(object):
         node = Node(desc['port'], desc['ip'])
         return node
 
-    def __init__(self, port, ip):
+    def __init__(self, ip, port):
         self.worker = Worker()
         self.neighbor = None
         self.ip = ip
@@ -175,7 +175,7 @@ class Node(object):
         if selectedPort == -1:
             raise ValueError('All ports seems occupied.')
 
-        newNode = Node(selectedPort, self.ip).castHasNeighbor()
+        newNode = Node(self.ip, selectedPort).castHasNeighbor()
         self.addNeighbor(newNode)
 
     def exit(self):

@@ -27,8 +27,8 @@ port2 = 1112
 # handler = SignalHandler(stopper)
 # signal.signal(signal.SIGINT, handler)
 
-node1 = Node(port1, LOCALIP)
-node2 = Node(port2, LOCALIP)
+node1 = Node(LOCALIP, port1)
+node2 = Node(LOCALIP, port2)
 
 neighbour1 = Neighbor(LOCALIP, port1)
 neighbour2 = Neighbor(LOCALIP, port2)
