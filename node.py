@@ -10,31 +10,6 @@ from worker import Worker
 from model import Job
 
 
-class SignalHandler:
-    """
-    The object that will handle signals and stop the worker threads.
-    """
-
-    #: The stop event that's shared by this handler and threads.
-    stopper = None
-
-    #: The pool of worker threads
-    workers = None
-
-    def __init__(self, stopper):
-        self.stopper = stopper
-
-    def __call__(self, signum, frame):
-        """
-        This will be called by the python signal module
-
-        https://docs.python.org/3/library/signal.html#signal.signal
-        """
-
-        self.stopper.set()
-        sys.exit(0)
-
-
 class Listener(threading.Thread):
 
     def __init__(self, port, node):
@@ -177,9 +152,6 @@ class Node(object):
 
         newNode = Node(self.ip, selectedPort).castHasNeighbor()
         self.addNeighbor(newNode)
-
-    def exit(self):
-        self.worker.exit()
 
 
 if __name__ == '__main__':

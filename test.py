@@ -23,10 +23,6 @@ LOCALIP = getIpOf(WIFIINTERFACE)
 port1 = 1111
 port2 = 1112
 
-# stopper = threading.Event()
-# handler = SignalHandler(stopper)
-# signal.signal(signal.SIGINT, handler)
-
 node1 = Node(LOCALIP, port1)
 node2 = Node(LOCALIP, port2)
 
