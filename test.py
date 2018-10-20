@@ -48,6 +48,9 @@ if __name__ == "__main__":
     )
     argparser.add_argument("ip", help="The Neighbour ip address")
     argparser.add_argument("port", type=int, help="The Neighbour port number")
+    argparser.add_argument(
+        "-i", "--interface", type=int, help="Network interface to use"
+    )
     args = argparser.parse_args()
 
     nodeNum = args.nodeNumber
