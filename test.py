@@ -5,42 +5,57 @@ import signal
 import netifaces as ni
 from worker import Worker
 from node import Node
-from node import Neighbor
-from node import SignalHandler
+from node import Neighbour
 from model import Job
 
-WIFIINTERFACE = 'en0'
+WIFIINTERFACE = "en0"
 
 
 def getIpOf(interface):
     ni.ifaddresses(interface)
-    ip = ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
+    ip = ni.ifaddresses(interface)[ni.AF_INET][0]["addr"]
     return ip
 
 
-LOCALIP = getIpOf(WIFIINTERFACE)
+def setupNode():
+    LOCALIP = getIpOf(WIFIINTERFACE)
+    port = 1111
+    return Node(LOCALIP, port)
 
-port1 = 1111
-port2 = 1112
 
-node1 = Node(LOCALIP, port1)
-node2 = Node(LOCALIP, port2)
+def connect0To1(node1, ipNode2, portNode2):
+    neighbour = Neighbour(ipNode2, portNode2)
+    node1.connectTo(neighbour)
 
-neighbour1 = Neighbor(LOCALIP, port1)
-neighbour2 = Neighbor(LOCALIP, port2)
 
-node1.addNeighbor(neighbour2)
-node2.addNeighbor(neighbour1)
+def addJobs(node):
 
-job1 = Job('job1', {'name': 'job1'})
-job1.addCommands(['echo "start: {name}"', 'sleep 100', 'echo "end: {name}"'])
+    for index in range(3):
+        jobName = "job{0}".format(index)
+        job = Job(jobName, {"name": jobName})
+        job.addCommands(['echo "start: {name}"', "sleep 100", 'echo "end: {name}"'])
+        node.pushJob(job)
 
-job2 = Job('job2', {'name': 'job2'})
-job2.addCommands(['echo "start: {name}"', 'sleep 100', 'echo "end: {name}"'])
 
-job3 = Job('job3', {'name': 'job3'})
-job3.addCommands(['echo "run {name}"'])
+if __name__ == "__main__":
+    import argparse
 
-node1.pushJob(job1)
-node1.pushJob(job2)
-node1.pushJob(job3)
+    argparser = argparse.ArgumentParser(description="Test the BobWorker Programm")
+    argparser.add_argument(
+        "nodeNumber", choices=[0, 1], type=int, help="The Node number"
+    )
+    argparser.add_argument("ip", help="The Neighbour ip address")
+    argparser.add_argument("port", type=int, help="The Neighbour port number")
+    args = argparser.parse_args()
+
+    nodeNum = args.nodeNumber
+    if nodeNum == 0:
+        # Setup the first Node
+        node = setupNode()
+        connect0To1(node, args.ipNode2, args.portNode2)
+    elif nodeNum == 1:
+        # Setup the second Node
+        node = setupNode()
+        addJobs(node)
+    else:
+        raise ValueError("Unrecognized node number: {0}".format(nodeNum))
