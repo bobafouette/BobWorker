@@ -8,12 +8,13 @@ from node import Node
 from node import Neighbour
 from model import Job
 
-WIFIINTERFACE = "en0"
+WIFIINTERFACE = "alfawifi"
 
 
 def getIpOf(interface):
     ni.ifaddresses(interface)
     ip = ni.ifaddresses(interface)[ni.AF_INET][0]["addr"]
+    print(ip)
     return ip
 
 
@@ -39,6 +40,7 @@ def addJobs(node):
 
 if __name__ == "__main__":
     import argparse
+    import time
 
     argparser = argparse.ArgumentParser(description="Test the BobWorker Programm")
     argparser.add_argument(
@@ -52,10 +54,12 @@ if __name__ == "__main__":
     if nodeNum == 0:
         # Setup the first Node
         node = setupNode()
-        connect0To1(node, args.ipNode2, args.portNode2)
+        time.sleep(10)
+        connect0To1(node, args.ip, args.port)
     elif nodeNum == 1:
         # Setup the second Node
         node = setupNode()
+        time.sleep(10)
         addJobs(node)
     else:
         raise ValueError("Unrecognized node number: {0}".format(nodeNum))
