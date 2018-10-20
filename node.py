@@ -65,7 +65,7 @@ class Neighbour(object):
         socket_client.send(
             "{flag} {object_}".format(
                 flag=object_.PROTOCOL_FLAG, object_=object_Desc
-            ).encode
+            ).encode()
         )
         socket_client.close()
 
