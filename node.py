@@ -26,13 +26,16 @@ class Listener(threading.Thread):
             message = message.split(" ")
             header = message[0]
 
+            # Received a new job
             if header == Job.PROTOCOL_FLAG:
                 job = Job.readDesc(" ".join(message[1:]))
                 self.node.pushJob(job)
 
+            # Received a new Neighbour
             elif header == Neighbour.PROTOCOL_FLAG:
                 neighbour = Neighbour.readDesc(" ".join(message[1:]))
                 self.node.addNeighbour(neighbour)
+
             client.close()
 
         self.node.exit()
@@ -55,20 +58,13 @@ class Neighbour(object):
         self.ip = ip
         self.port = port
 
-    def passJob(self, job):
-
-        job = job.writeDesc()
+    def passObject(self, object_):
+        object_ = object_.writeDesc()
         socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_client.connect(((self.ip, self.port)))
-        socket_client.send("JOB {job}".format(job=job))
-        socket_client.close()
-
-    def passNeighbour(self, neighbour):
-
-        neighbour = neighbour.writeDesc()
-        socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        socket_client.connect(((self.ip, self.port)))
-        socket_client.send("NEIGHBOR {neighbour}".format(neighbour=neighbour))
+        socket_client.send(
+            "{flag} {object_}".format(flag=object_.PROTOCOL_FLAG, object_=object_)
+        )
         socket_client.close()
 
     def writeDesc(self):
@@ -102,7 +98,7 @@ class Node(object):
     def addNeighbour(self, neighbour):
 
         if self.neighbour:
-            neighbour.passNeighbour(self.neighbour)
+            neighbour.passObject(self.neighbour)
         self.neighbour = neighbour
 
     def pushJob(self, job):
@@ -117,7 +113,7 @@ class Node(object):
             self.startNode()
 
         self.passedJobCounter += 1
-        self.neighbour.passJob(job)
+        self.neighbour.passObject(job)
 
     def startNode(self):
 
