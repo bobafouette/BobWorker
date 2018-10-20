@@ -3,13 +3,12 @@ import json
 
 
 class Job(object):
-
     @staticmethod
     def readDesc(desc):
 
         desc = json.loads(desc)
-        job = Job(desc['name'], desc['metadata'])
-        job.addCommands([' '.join(command) for command in desc['commands']])
+        job = Job(desc["name"], desc["metadata"])
+        job.addCommands([" ".join(command) for command in desc["commands"]])
         return job
 
     def __init__(self, name, metadata={}):
@@ -52,9 +51,10 @@ class Job(object):
 
     def writeDesc(self):
         desc = {
-            'commands': [list(command.split(' ')) for command in self.commands],
-            'name': self.name,
-            'metadata': self.metadata
+            # TODO: Why casting as list?
+            "commands": [list(command.split(" ")) for command in self.commands],
+            "name": self.name,
+            "metadata": self.metadata,
         }
         return json.dumps(desc)
 
@@ -64,7 +64,6 @@ class Job(object):
         self.commands.extend(commands)
 
     def execute(self):
-        self.commands = [command.format(**self.metadata)
-                         for command in self.commands]
-        commandLine = '; '.join(self.commands)
-        return subprocess.Popen(commandLine, shell=True)
+        self.commands = [command.format(**self.metadata) for command in self.commands]
+        commandLine = "; ".join(self.commands)
+        self.proc = subprocess.Popen(commandLine, shell=True)

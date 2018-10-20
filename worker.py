@@ -2,7 +2,6 @@ import logging
 
 
 class Worker(object):
-
     def __init__(self):
 
         self.job = None
