@@ -17,7 +17,7 @@ def getIpOf(interface):
 
 
 def setupNode(wifi):
-    LOCALIP = getIpOf(WIFIINTERFACE)
+    LOCALIP = getIpOf(wifi)
     port = 1111
     return Node(LOCALIP, port)
 
