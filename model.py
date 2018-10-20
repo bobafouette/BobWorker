@@ -18,6 +18,29 @@ class Job(object):
         if not metadata:
             metadata = {}
         self.metadata = metadata
+        self.proc = None
+
+        # Used once the job is completed
+        self.rcode = None
+        self.stdin = None
+        self.stderr = None
+
+    def isRunning(self):
+        if self.proc:
+            self.rcode = self.proc.poll()
+            self.stdout = self.proc.stdout.read()
+            self.stderr = self.proc.stderr.read()
+            self.proc = None
+            return False
+        return True
+
+    def killProc(self):
+        if not self.isRunning():
+            return
+        self.proc.kill()
+        self.rcode = self.proc.returncode
+        self.stdout = self.proc.stdout.read()
+        self.stderr = self.proc.stderr.read()
 
     @property
     def name(self):
