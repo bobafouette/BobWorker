@@ -27,6 +27,8 @@ class Job(object):
     def isRunning(self):
         if self.proc:
             self.rcode = self.proc.poll()
+            if self.rcode is None:
+                return True
             self.stdout = self.proc.stdout.read()
             self.stderr = self.proc.stderr.read()
             self.proc = None
