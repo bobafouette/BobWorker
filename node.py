@@ -26,26 +26,29 @@ class Listener(threading.Thread):
             message = message.split(" ")
             header = message[0]
 
-            if header == "JOB":
+            if header == Job.PROTOCOL_FLAG:
                 job = Job.readDesc(" ".join(message[1:]))
                 self.node.pushJob(job)
 
-            elif header == "NEIGHBOR":
-                neighbor = Neighbor.readDesc(" ".join(message[1:]))
-                self.node.addNeighbor(neighbor)
+            elif header == Neighbour.PROTOCOL_FLAG:
+                neighbour = Neighbour.readDesc(" ".join(message[1:]))
+                self.node.addNeighbour(neighbour)
             client.close()
 
         self.node.exit()
         self.socket.close()
 
 
-class Neighbor(object):
+class Neighbour(object):
+
+    PROTOCOL_FLAG = "NEIGHBOUR"
+
     @staticmethod
     def readDesc(desc):
 
         desc = json.loads(desc)
-        neighbor = Neighbor(desc["ip"], desc["port"])
-        return neighbor
+        neighbour = Neighbour(desc["ip"], desc["port"])
+        return neighbour
 
     def __init__(self, ip, port):
 
@@ -54,18 +57,18 @@ class Neighbor(object):
 
     def passJob(self, job):
 
-        job = Job.writeDesc(job)
+        job = job.writeDesc()
         socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_client.connect(((self.ip, self.port)))
         socket_client.send("JOB {job}".format(job=job))
         socket_client.close()
 
-    def passNeighbor(self, neighbor):
+    def passNeighbour(self, neighbour):
 
-        neighbor = neighbor.writeDesc(neighbor)
+        neighbour = neighbour.writeDesc()
         socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_client.connect(((self.ip, self.port)))
-        socket_client.send("NEIGHBOR {neighbor}".format(neighbor=neighbor))
+        socket_client.send("NEIGHBOR {neighbour}".format(neighbour=neighbour))
         socket_client.close()
 
     def writeDesc(self):
@@ -74,6 +77,9 @@ class Neighbor(object):
 
 
 class Node(object):
+
+    PROTOCOL_FLAG = "NODE"
+
     @staticmethod
     def readDesc(desc):
 
@@ -83,21 +89,21 @@ class Node(object):
 
     def __init__(self, ip, port):
         self.worker = Worker()
-        self.neighbor = None
+        self.neighbour = None
         self.ip = ip
         self.port = port
         self.listener = Listener(port, self)
         self.listener.start()
         self.passedJobCounter = 0
 
-    def castHasNeighbor(self):
-        return Neighbor(self.ip, self.port)
+    def castHasNeighbour(self):
+        return Neighbour(self.ip, self.port)
 
-    def addNeighbor(self, neighbor):
+    def addNeighbour(self, neighbour):
 
-        if self.neighbor:
-            neighbor.passNeighbor(self.neighbor)
-        self.neighbor = neighbor
+        if self.neighbour:
+            neighbour.passNeighbour(self.neighbour)
+        self.neighbour = neighbour
 
     def pushJob(self, job):
 
@@ -111,7 +117,7 @@ class Node(object):
             self.startNode()
 
         self.passedJobCounter += 1
-        self.neighbor.passJob(job)
+        self.neighbour.passJob(job)
 
     def startNode(self):
 
@@ -135,8 +141,8 @@ class Node(object):
         if selectedPort == -1:
             raise ValueError("All ports seems occupied.")
 
-        newNode = Node(self.ip, selectedPort).castHasNeighbor()
-        self.addNeighbor(newNode)
+        newNode = Node(self.ip, selectedPort).castHasNeighbour()
+        self.addNeighbour(newNode)
 
     def writeDesc(self):
         desc = {"port": self.port, "ip": self.ip}

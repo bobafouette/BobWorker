@@ -3,6 +3,9 @@ import json
 
 
 class Job(object):
+
+    PROTOCOL_FLAG = "JOB"
+
     @staticmethod
     def readDesc(desc):
 
