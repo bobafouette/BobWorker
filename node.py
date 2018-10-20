@@ -81,14 +81,6 @@ class Neighbor(object):
 class Node(object):
 
     @staticmethod
-    def writeDesc(node):
-        desc = {
-            'port': node.port,
-            'ip': node.ip,
-        }
-        return json.dumps(desc)
-
-    @staticmethod
     def readDesc(desc):
 
         desc = json.loads(desc)
@@ -151,6 +143,13 @@ class Node(object):
 
         newNode = Node(self.ip, selectedPort).castHasNeighbor()
         self.addNeighbor(newNode)
+
+    def writeDesc(self):
+        desc = {
+            'port': self.port,
+            'ip': self.ip,
+        }
+        return json.dumps(desc)
 
 
 if __name__ == '__main__':
