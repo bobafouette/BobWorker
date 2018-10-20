@@ -8,8 +8,6 @@ from node import Node
 from node import Neighbour
 from model import Job
 
-WIFIINTERFACE = "alfawifi"
-
 
 def getIpOf(interface):
     ni.ifaddresses(interface)
@@ -18,7 +16,7 @@ def getIpOf(interface):
     return ip
 
 
-def setupNode():
+def setupNode(wifi):
     LOCALIP = getIpOf(WIFIINTERFACE)
     port = 1111
     return Node(LOCALIP, port)
@@ -54,12 +52,12 @@ if __name__ == "__main__":
     nodeNum = args.nodeNumber
     if nodeNum == 0:
         # Setup the first Node
-        node = setupNode()
+        node = setupNode(args.interface)
         time.sleep(10)
         connect0To1(node, args.ip, args.port)
     elif nodeNum == 1:
         # Setup the second Node
-        node = setupNode()
+        node = setupNode(args.interface)
         time.sleep(10)
         addJobs(node)
     else:
