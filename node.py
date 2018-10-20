@@ -59,11 +59,13 @@ class Neighbour(object):
         self.port = port
 
     def passObject(self, object_):
-        object_ = object_.writeDesc()
+        object_Desc = object_.writeDesc()
         socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_client.connect(((self.ip, self.port)))
         socket_client.send(
-            "{flag} {object_}".format(flag=object_.PROTOCOL_FLAG, object_=object_)
+            "{flag} {object_}".format(
+                flag=object_.PROTOCOL_FLAG, object_=object_Desc
+            ).encode
         )
         socket_client.close()
 
@@ -109,6 +111,7 @@ class Node(object):
         self.neighbour.passObject(job)
 
     def connectTo(self, neighbour):
+        self.neighbour = neighbour
         self.neighbour.passObject(self)
 
     def startNode(self):
