@@ -21,7 +21,7 @@ class Listener(threading.Thread):
         while True:
             self.socket.listen(5)
             client, address = self.socket.accept()
-            message = client.recv(255)
+            message = client.recv(255).decode()
 
             message = message.split(" ")
             header = message[0]
@@ -60,13 +60,13 @@ class Neighbour(object):
 
     def passObject(self, object_):
         object_Desc = object_.writeDesc()
+        message = "{flag} {object_}".format(
+            flag=object_.PROTOCOL_FLAG, object_=object_Desc
+        ).encode()
+        print(message)
         socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_client.connect(((self.ip, self.port)))
-        socket_client.send(
-            "{flag} {object_}".format(
-                flag=object_.PROTOCOL_FLAG, object_=object_Desc
-            ).encode()
-        )
+        socket_client.send(message)
         socket_client.close()
 
     def writeDesc(self):
