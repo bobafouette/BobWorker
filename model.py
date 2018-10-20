@@ -5,15 +5,6 @@ import json
 class Job(object):
 
     @staticmethod
-    def writeDesc(job):
-        desc = {
-            'commands': [list(command.split(' ')) for command in job.commands],
-            'name': job.name,
-            'metadata': job.metadata
-        }
-        return json.dumps(desc)
-
-    @staticmethod
     def readDesc(desc):
 
         desc = json.loads(desc)
@@ -35,6 +26,14 @@ class Job(object):
     @name.setter
     def name(self, name):
         self._name = name
+
+    def writeDesc(self):
+        desc = {
+            'commands': [list(command.split(' ')) for command in self.commands],
+            'name': self.name,
+            'metadata': self.metadata
+        }
+        return json.dumps(desc)
 
     def addCommands(self, commands):
         if not isinstance(commands, list):
