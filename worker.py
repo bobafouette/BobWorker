@@ -5,15 +5,11 @@ class Worker(object):
     def __init__(self):
 
         self.job = None
-        self.proc = None
 
     def addJob(self, job):
 
-        if self.job or (self.proc and self.proc.poll() is None):
+        if self.job and self.job.isRunning():
             return job
-
-        if self.proc:
-            self.proc = None
 
         self.job = job
         self.execute()
@@ -21,12 +17,9 @@ class Worker(object):
     def execute(self):
         if not self.job:
             return
-
-        job = self.job
-        self.job = None
-        self.proc = job.execute()
+        self.job.execute()
 
     def exit(self):
-        self.proc.kill(-9)
-        self.proc = None
-        self.job = None
+        if not self.job:
+            return
+        self.job.killProc()
