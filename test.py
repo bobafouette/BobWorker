@@ -53,7 +53,7 @@ if __name__ == "__main__":
     if nodeNum == 0:
         # Setup the first Node
         node = setupNode(args.interface)
-        time.sleep(10)
+        time.sleep(5)
         connect0To1(node, args.ip, args.port)
     elif nodeNum == 1:
         # Setup the second Node
