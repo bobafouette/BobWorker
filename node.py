@@ -43,14 +43,6 @@ class Listener(threading.Thread):
 class Neighbor(object):
 
     @staticmethod
-    def writeDesc(Neighbor):
-        desc = {
-            'port': Neighbor.port,
-            'ip': Neighbor.ip,
-        }
-        return json.dumps(desc)
-
-    @staticmethod
     def readDesc(desc):
 
         desc = json.loads(desc)
@@ -77,6 +69,13 @@ class Neighbor(object):
         socket_client.connect(((self.ip, self.port)))
         socket_client.send('NEIGHBOR {neighbor}'.format(neighbor=neighbor))
         socket_client.close()
+    
+    def writeDesc(self):
+        desc = {
+            'port': self.port,
+            'ip': self.ip,
+        }
+        return json.dumps(desc)
 
 
 class Node(object):
