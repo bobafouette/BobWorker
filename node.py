@@ -90,7 +90,6 @@ class Node(object):
         self.port = port
         self.listener = Listener(port, self)
         self.listener.start()
-        self.passedJobCounter = 0
 
     def castHasNeighbour(self):
         return Neighbour(self.ip, self.port)
@@ -105,15 +104,12 @@ class Node(object):
 
         job = self.worker.addJob(job)
         if not job:
-            self.passedJobCounter = 0
             return
 
-        if self.passedJobCounter > 5:
-            self.passedJobCounter = 0
-            self.startNode()
-
-        self.passedJobCounter += 1
         self.neighbour.passObject(job)
+
+    def connectTo(self, neighbour):
+        self.neighbour.passObject(self)
 
     def startNode(self):
 
