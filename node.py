@@ -77,7 +77,7 @@ class Neighbour(object):
         socket_client.send(message)
         socket_client.close()
 
-        logging.getLogger(__class__.__name__).info(
+        logging.getLogger(self.__class__.__name__).info(
             "Pass an object: {0}".format(message)
         )
 
@@ -119,10 +119,10 @@ class Node(object):
 
         job = self.worker.addJob(job)
         if not job:
-            logging.getLogger(__class__.__name__).info("New Job started")
+            logging.getLogger(self.__class__.__name__).info("New Job started")
             return
 
-        logging.getLogger(__class__.__name__).warning("Worker is busy pass Job")
+        logging.getLogger(self.__class__.__name__).warning("Worker is busy pass Job")
         self.neighbour.passObject(job)
 
     def connectTo(self, neighbour):
