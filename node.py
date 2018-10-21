@@ -16,6 +16,7 @@ class Listener(threading.Thread):
         self.node = node
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind((self.node.ip, port))
+        logging.getLogger(self.__class__).setLevel(logging.INFO)
 
     def run(self):
         while True:
@@ -28,12 +29,18 @@ class Listener(threading.Thread):
 
             # Received a new job
             if header == Job.PROTOCOL_FLAG:
+                logging.getLogger(self.__class__).info(
+                    "Recieved a new Job: {0}".format(message)
+                )
                 job = Job.readDesc(" ".join(message[1:]))
                 self.node.pushJob(job)
 
             # Received a new Neighbour
             elif header == Neighbour.PROTOCOL_FLAG:
                 neighbour = Neighbour.readDesc(" ".join(message[1:]))
+                logging.getLogger(self.__class__).info(
+                    "Recieved a new Neighbour: {0}".format(message)
+                )
                 self.node.addNeighbour(neighbour)
 
             client.close()
@@ -57,17 +64,20 @@ class Neighbour(object):
 
         self.ip = ip
         self.port = port
+        logging.getLogger(self.__class__).setLevel(logging.INFO)
 
     def passObject(self, object_):
         object_Desc = object_.writeDesc()
         message = "{flag} {object_}".format(
             flag=object_.PROTOCOL_FLAG, object_=object_Desc
         ).encode()
-        print(message)
+
         socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_client.connect(((self.ip, self.port)))
         socket_client.send(message)
         socket_client.close()
+
+        logging.getLogger(__class__).info("Pass an object: {0}".format(message))
 
     def writeDesc(self):
         desc = {"port": self.port, "ip": self.ip}
@@ -92,6 +102,7 @@ class Node(object):
         self.port = port
         self.listener = Listener(port, self)
         self.listener.start()
+        logging.getLogger(self.__class__).setLevel(logging.INFO)
 
     def castHasNeighbour(self):
         return Neighbour(self.ip, self.port)
@@ -106,8 +117,10 @@ class Node(object):
 
         job = self.worker.addJob(job)
         if not job:
+            logging.getLogger(__class__).info("New Job started")
             return
 
+        logging.getLogger(__class__).warning("Worker is busy pass Job")
         self.neighbour.passObject(job)
 
     def connectTo(self, neighbour):
