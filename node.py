@@ -26,7 +26,7 @@ class Listener(threading.Thread):
         while True:
             self.socket.listen(5)
             client, address = self.socket.accept()
-            message = client.recv(255).decode()
+            message = client.recv(255).decode().split(" ")
             header = message[0]
 
             # Received a new job
