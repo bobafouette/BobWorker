@@ -22,9 +22,9 @@ def setupNode(wifi):
     return Node(LOCALIP, port)
 
 
-def connect0To1(node1, ipNode2, portNode2):
-    neighbour = Neighbour(ipNode2, portNode2)
-    node1.connectTo(neighbour)
+def connect0To1(node, ipNode1, portNode1):
+    neighbour = Neighbour(ipNode1, portNode1)
+    node.connectTo(neighbour)
 
 
 def addJobs(node):
