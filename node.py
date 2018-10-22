@@ -26,11 +26,10 @@ class Listener(threading.Thread):
         while True:
             self.socket.listen(5)
             client, address = self.socket.accept()
-            message = client.recv(255).decode()
+            message = " ".join(client.recv(255).decode())
 
             message = message.split(" ")
             header = message[0]
-            print("Message received: {0}".format(message))
 
             # Received a new job
             if header == Job.PROTOCOL_FLAG:
@@ -47,6 +46,11 @@ class Listener(threading.Thread):
                     "Recieved a new Neighbour: {0}".format(message)
                 )
                 self.node.addNeighbour(neighbour)
+
+            else:
+                logging.getLogger(self.__class__.__name__).error(
+                    "Message could not be interepreted: {0}".format(message)
+                )
 
             client.close()
 
