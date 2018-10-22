@@ -30,6 +30,7 @@ class Listener(threading.Thread):
 
             message = message.split(" ")
             header = message[0]
+            print("Message received: {0}".format(message))
 
             # Received a new job
             if header == Job.PROTOCOL_FLAG:
@@ -59,13 +60,11 @@ class Neighbour(object):
 
     @staticmethod
     def readDesc(desc):
-
         desc = json.loads(desc)
         neighbour = Neighbour(desc["ip"], desc["port"])
         return neighbour
 
     def __init__(self, ip, port):
-
         self.ip = ip
         self.port = port
         logging.getLogger(self.__class__.__name__).setLevel(logging.INFO)
