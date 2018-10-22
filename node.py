@@ -137,7 +137,7 @@ class Node(object):
 
     def connectTo(self, neighbour):
         self.neighbour = neighbour
-        self.neighbour.passObject(self)
+        self.neighbour.passObject(self.castHasNeighbour())
 
     def startNode(self):
 
