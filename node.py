@@ -2,12 +2,16 @@ import socket
 import threading
 import errno
 import json
-import logging
 import sys
 import time
+import logging
+
 
 from worker import Worker
 from model import Job
+
+# NOTE:Setup logger with a StreamHandler by default
+logging.basicConfig()
 
 
 class Listener(threading.Thread):
