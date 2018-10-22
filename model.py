@@ -24,6 +24,7 @@ class Job(object):
 
         # Used once the job is completed
         self.rcode = None
+        # TODO: Fix the STDs!
         # self.stdin = None
         # self.stderr = None
 
