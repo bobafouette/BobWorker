@@ -24,16 +24,16 @@ class Job(object):
 
         # Used once the job is completed
         self.rcode = None
-        self.stdin = None
-        self.stderr = None
+        # self.stdin = None
+        # self.stderr = None
 
     def isRunning(self):
         if self.proc:
             self.rcode = self.proc.poll()
             if self.rcode is None:
                 return True
-            self.stdout = self.proc.stdout.read()
-            self.stderr = self.proc.stderr.read()
+            # self.stdout = self.proc.stdout.read()
+            # self.stderr = self.proc.stderr.read()
             self.proc = None
             return False
         return True
@@ -43,8 +43,8 @@ class Job(object):
             return
         self.proc.kill()
         self.rcode = self.proc.returncode
-        self.stdout = self.proc.stdout.read()
-        self.stderr = self.proc.stderr.read()
+        # self.stdout = self.proc.stdout.read()
+        # self.stderr = self.proc.stderr.read()
 
     @property
     def name(self):
@@ -56,8 +56,7 @@ class Job(object):
 
     def writeDesc(self):
         desc = {
-            # TODO: Why casting as list?
-            "commands": [list(command.split(" ")) for command in self.commands],
+            "commands": [command.split(" ") for command in self.commands],
             "name": self.name,
             "metadata": self.metadata,
         }
