@@ -126,10 +126,14 @@ class Node(object):
         if not job:
             logging.getLogger(self.__class__.__name__).info("New Job started")
             return
-
         logging.getLogger(self.__class__.__name__).warning("Worker is busy pass Job")
+
         if self.neighbour:
             self.neighbour.passObject(job)
+        else:
+            logging.getLogger(self.__class__.__name__).warning(
+                "No neighbour to pass the Job. The Job is lost."
+            )
 
     def connectTo(self, neighbour):
         self.neighbour = neighbour
