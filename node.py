@@ -123,7 +123,8 @@ class Node(object):
             return
 
         logging.getLogger(self.__class__.__name__).warning("Worker is busy pass Job")
-        self.neighbour.passObject(job)
+        if self.neighbour:
+            self.neighbour.passObject(job)
 
     def connectTo(self, neighbour):
         self.neighbour = neighbour
