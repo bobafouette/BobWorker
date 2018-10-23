@@ -15,7 +15,7 @@ class Job(object):
         job.addCommands([" ".join(command) for command in desc["commands"]])
         return job
 
-    def __init__(self, name, metadata={}):
+    def __init__(self, name, metadata=None):
         self._name = name
         self.commands = []
         if not metadata:
