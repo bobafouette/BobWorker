@@ -42,26 +42,35 @@ class Job(object):
         self.notifyEnded()
 
     def notifyEnded(self):
-        self.proc = None
 
-        if not self.proc or not self.proc.returncode:
+        if not self.proc:
+            logging.getLogger(self.__class__.__name__).warning(
+                "The method Job.notifyEndend has been called on a procless job"
+            )
+            return
+
+        if self.proc.returncode is None:
             logging.getLogger(self.__class__.__name__).warning(
                 "The method Job.notifyEndend has been called on a running job"
             )
             return
 
+        # Clean proc attribute
+        proc = self.proc
+        self.proc = None
+
         # Setup log message
-        if self.proc.returncode != 0:
+        if proc.returncode != 0:
             # Error warning
-            state = "in error (rcode {rcode})".format(self.proc.returncode)
+            state = "in error (rcode {rcode})".format(proc.returncode)
             logLevel = logging.WARNING
         else:
             # Done info
             state = "done"
             logLevel = logging.INFO
         # The outputs
-        stdout = self.proc.stdout.read()
-        stderr = self.proc.stderr.read()
+        stdout = proc.stdout.read()
+        stderr = proc.stderr.read()
 
         message = [
             "The Job {name} is {state}.".format(name=self.name, state=state),
@@ -95,4 +104,6 @@ class Job(object):
     def execute(self):
         self.commands = [command.format(**self.metadata) for command in self.commands]
         commandLine = "; ".join(self.commands)
-        self.proc = subprocess.Popen(commandLine, shell=True)
+        self.proc = subprocess.Popen(
+            commandLine, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        )
