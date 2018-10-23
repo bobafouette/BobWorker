@@ -72,13 +72,10 @@ class Job(object):
         stdout = proc.stdout.read()
         stderr = proc.stderr.read()
 
-        message = [
-            "The Job {name} is {state}.".format(name=self.name, state=state),
-            "\t-stdout:{stdout}.".format(stdout=stdout),
-            "\t-stderr: {stderr}".format(stderr=stderr),
-        ]
-        for line in message:
-            logging.getLogger(self.__class__.__name__).log(logLevel, line)
+        message = "\n".join(
+            ["The Job {name} is {state}.", "\t-stdout:{stdout}.", "\t-stderr: {stderr}"]
+        ).format(name=self.name, state=state, stdout=stdout, stderr=stderr)
+        logging.getLogger(self.__class__.__name__).log(logLevel, message)
 
     @property
     def name(self):
