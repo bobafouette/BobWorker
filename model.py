@@ -73,7 +73,11 @@ class Job(object):
         stderr = proc.stderr.read()
 
         message = "\n".join(
-            ["The Job {name} is {state}.", "\t-stdout:{stdout}.", "\t-stderr: {stderr}"]
+            [
+                "The Job {name} is {state}.",
+                "\t-stdout:\n{stdout}.",
+                "\t-stderr:\n{stderr}",
+            ]
         ).format(name=self.name, state=state, stdout=stdout, stderr=stderr)
         logging.getLogger(self.__class__.__name__).log(logLevel, message)
 
