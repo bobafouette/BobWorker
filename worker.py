@@ -11,8 +11,10 @@ class Worker(object):
         if self.job and self.job.isRunning():
             return job
 
+        oldJob = self.job
         self.job = job
         self.execute()
+        return oldJob
 
     def execute(self):
         if not self.job:

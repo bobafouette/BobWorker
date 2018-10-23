@@ -1,3 +1,4 @@
+import logging
 import subprocess
 import json
 
@@ -22,30 +23,53 @@ class Job(object):
         self.metadata = metadata
         self.proc = None
 
-        # Used once the job is completed
-        self.rcode = None
-        # TODO: Fix the STDs!
-        # self.stdin = None
-        # self.stderr = None
+        logging.getLogger(self.__class__.__name__).setLevel(logging.INFO)
 
     def isRunning(self):
-        if self.proc:
-            self.rcode = self.proc.poll()
-            if self.rcode is None:
-                return True
-            # self.stdout = self.proc.stdout.read()
-            # self.stderr = self.proc.stderr.read()
-            self.proc = None
+        if not self.proc:
             return False
-        return True
+
+        if self.proc.poll() is None:
+            return True
+
+        self.notifyEnded()
+        return False
 
     def killProc(self):
         if not self.isRunning():
             return
         self.proc.kill()
-        self.rcode = self.proc.returncode
-        # self.stdout = self.proc.stdout.read()
-        # self.stderr = self.proc.stderr.read()
+        self.notifyEnded()
+
+    def notifyEnded(self):
+        self.proc = None
+
+        if not self.proc or not self.proc.returncode:
+            logging.getLogger(self.__class__.__name__).warning(
+                "The method Job.notifyEndend has been called on a running job"
+            )
+            return
+
+        # Setup log message
+        if self.proc.returncode != 0:
+            # Error warning
+            state = "in error (rcode {rcode})".format(self.proc.returncode)
+            logLevel = logging.WARNING
+        else:
+            # Done info
+            state = "done"
+            logLevel = logging.INFO
+        # The outputs
+        stdout = self.proc.stdout.read()
+        stderr = self.proc.stderr.read()
+
+        message = [
+            "The Job {name} is {state}.".format(name=self.name, state=state),
+            "\t-stdout:{stdout}.".format(stdout=stdout),
+            "\t-stderr: {stderr}".format(stderr=stderr),
+        ]
+        for line in message:
+            logging.getLogger(self.__class__.__name__).log(logLevel, line)
 
     @property
     def name(self):

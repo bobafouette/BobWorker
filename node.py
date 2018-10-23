@@ -122,15 +122,18 @@ class Node(object):
 
     def pushJob(self, job):
 
-        job = self.worker.addJob(job)
-        if not job:
+        workerJob = self.worker.addJob(job)
+        if job != workerJob:
+            # The worker has returned an old Job, the new one is starting
             logging.getLogger(self.__class__.__name__).info("New Job started")
             return
+        # The worker has return the new job. We have to pass it
         logging.getLogger(self.__class__.__name__).warning("Worker is busy pass Job")
 
         if self.neighbour:
             self.neighbour.passObject(job)
         else:
+            # TODO: Lost, really??
             logging.getLogger(self.__class__.__name__).warning(
                 "No neighbour to pass the Job. The Job is lost."
             )
