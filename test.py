@@ -32,7 +32,7 @@ def addJobs(node):
     for index in range(3):
         jobName = "job{0}".format(index)
         job = Job(jobName, {"name": jobName})
-        job.addCommands(['echo "start: {name}"', "sleep 100", 'echo "end: {name}"'])
+        job.addCommands(['echo "start: {name}"', "sleep 10", 'echo "end: {name}"'])
         node.pushJob(job)
 
 
